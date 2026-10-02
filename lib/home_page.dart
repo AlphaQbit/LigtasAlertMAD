@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'constants.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.onSignOut});
+
+  final VoidCallback? onSignOut;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -33,7 +35,8 @@ class _HomePageState extends State<HomePage> {
             Icons.menu_rounded,
             size: 30,
           ),
-          onPressed: () {},
+          tooltip: 'Menu',
+          onPressed: _openMenu,
         ),
         title: const Text(
           'LigtasAlert',
@@ -81,6 +84,30 @@ class _HomePageState extends State<HomePage> {
               _buildSendButton(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _openMenu() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.logout_rounded, color: kPrimary),
+              title: const Text(
+                'Sign out',
+                style: TextStyle(color: kPrimary, fontWeight: FontWeight.w700),
+              ),
+              onTap: () {
+                Navigator.pop(sheet);
+                widget.onSignOut?.call();
+              },
+            ),
+          ],
         ),
       ),
     );

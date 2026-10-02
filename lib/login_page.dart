@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'constants.dart';
 
 class LoginPage extends StatefulWidget {
@@ -190,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
       validator: (value) {
         final text = value?.trim() ?? '';
         if (text.isEmpty) return 'Enter your email';
-        if (!text.contains('@') || !text.contains('.')) {
+        if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(text)) {
           return 'Enter a valid email';
         }
         return null;
@@ -274,7 +274,7 @@ class _LoginPageState extends State<LoginPage> {
         const SizedBox(width: 8),
 
         TextButton(
-          onPressed: () {},
+          onPressed: _showResetHelp,
           style: TextButton.styleFrom(
             foregroundColor: kPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -390,6 +390,28 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showResetHelp() {
+    // ponytail: no backend, so no real reset flow. Telling the user who to ask
+    // is the honest version of this button - a fake "email sent" dialog would
+    // be a lie the user acts on. Wire a real reset endpoint here when there is one.
+    showDialog<void>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: const Text('Reset your password'),
+        content: const Text(
+          'Contact your facility security office, or the LigtasAlert admin, '
+          'to reset your password.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialog),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
     );
   }
 

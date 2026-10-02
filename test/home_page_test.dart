@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ligtasalert/home_page.dart';
 
@@ -26,7 +26,7 @@ void main() {
   testWidgets('send button starts disabled', (tester) async {
     await pumpAt(tester, const Size(360, 640));
     final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Send Alert'),
+      find.widgetWithText(FilledButton, 'SEND ALERT'),
     );
     expect(button.onPressed, isNull);
   });
@@ -36,8 +36,27 @@ void main() {
     await tester.tap(find.text('Lockdown'));
     await tester.pump();
     final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Send Alert'),
+      find.widgetWithText(FilledButton, 'SEND ALERT'),
     );
     expect(button.onPressed, isNotNull);
+  });
+
+  testWidgets('menu signs out', (tester) async {
+    var signedOut = false;
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(home: HomePage(onSignOut: () => signedOut = true)),
+    );
+
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Sign out'), findsOneWidget);
+
+    await tester.tap(find.text('Sign out'));
+    await tester.pumpAndSettle();
+    expect(signedOut, isTrue);
   });
 }

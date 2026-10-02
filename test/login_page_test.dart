@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ligtasalert/home_page.dart';
 import 'package:ligtasalert/login_page.dart';
@@ -92,6 +92,16 @@ void main() {
 
     expect(find.byType(HomePage), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('forgot password explains how to get help', (tester) async {
+    await pumpAt(tester, const Size(360, 640));
+
+    await tester.tap(find.text('Forgot password?'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reset your password'), findsOneWidget);
+    expect(find.textContaining('security office'), findsOneWidget);
   });
 
   testWidgets('invalid email shows a validation error', (tester) async {

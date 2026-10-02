@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'constants.dart';
 import 'home_page.dart';
 import 'login_page.dart';
@@ -24,7 +24,15 @@ class LigtasApp extends StatelessWidget {
         builder: (context) => LoginPage(
           onLoggedIn: () {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const HomePage()),
+              MaterialPageRoute(
+                builder: (_) => HomePage(
+                  onSignOut: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                    );
+                  },
+                ),
+              ),
             );
           },
         ),
