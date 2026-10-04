@@ -1,26 +1,42 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'constants.dart';
+import 'services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, this.onLoggedIn});
+  const LoginPage({super.key, this.onLoggedIn, this.auth, this.openUrl});
 
   final VoidCallback? onLoggedIn;
+
+  /// Injected by tests; defaults to the real backend client.
+  final AuthService? auth;
+
+  /// Opens the Microsoft consent page in a real browser. Injected by tests,
+  /// which must not launch anything.
+  final Future<bool> Function(String url)? openUrl;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
-  bool _rememberMe = false;
+  bool _busy = false;
+
+  AuthService? _ownedAuth;
+
+  AuthService get _auth => widget.auth ?? (_ownedAuth ??= AuthService());
 
   @override
   void dispose() {
+    _name.dispose();
     _email.dispose();
     _password.dispose();
+    _ownedAuth?.close();
     super.dispose();
   }
 
@@ -154,6 +170,10 @@ class _LoginPageState extends State<LoginPage> {
 
           const SizedBox(height: 18),
 
+          _buildNameField(),
+
+          const SizedBox(height: 14),
+
           _buildEmailField(),
 
           const SizedBox(height: 14),
@@ -162,11 +182,15 @@ class _LoginPageState extends State<LoginPage> {
 
           const SizedBox(height: 8),
 
-          _buildRememberRow(),
+          _buildForgotPassword(),
 
           const SizedBox(height: 20),
 
           _buildSignInButton(),
+
+          const SizedBox(height: 16),
+
+          _buildMicrosoftButton(),
 
           const SizedBox(height: 16),
 
@@ -176,6 +200,20 @@ class _LoginPageState extends State<LoginPage> {
 
           _buildSignUpButton(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNameField() {
+    return TextFormField(
+      controller: _name,
+      textCapitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.next,
+      onChanged: (_) => setState(() {}),
+      decoration: _inputDecoration(
+        icon: Icons.person_outline_rounded,
+        label: 'Full name',
+        hint: 'Juan Dela Cruz',
       ),
     );
   }
@@ -237,42 +275,9 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildRememberRow() {
+  Widget _buildForgotPassword() {
     return Row(
       children: [
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: Checkbox(
-            value: _rememberMe,
-            onChanged: (value) {
-              setState(() {
-                _rememberMe = value ?? false;
-              });
-            },
-            activeColor: kPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
-            ),
-          ),
-        ),
-
-        const SizedBox(width: 10),
-
-        const Expanded(
-          child: Text(
-            'Remember me',
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: kTextPrimary,
-            ),
-          ),
-        ),
-
-        const SizedBox(width: 8),
-
         TextButton(
           onPressed: _showResetHelp,
           style: TextButton.styleFrom(
@@ -294,7 +299,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildSignInButton() {
-    final enabled = _email.text.trim().isNotEmpty && _password.text.isNotEmpty;
+    final enabled =
+        !_busy && _email.text.trim().isNotEmpty && _password.text.isNotEmpty;
 
     return SizedBox(
       height: 58,
@@ -316,6 +322,33 @@ class _LoginPageState extends State<LoginPage> {
             fontWeight: FontWeight.w900,
             letterSpacing: 0.5,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMicrosoftButton() {
+    return SizedBox(
+      height: 52,
+      child: OutlinedButton.icon(
+        onPressed: _busy ? null : _microsoftSignIn,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: kTextPrimary,
+          side: const BorderSide(color: kBorder, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        // The four-square Microsoft mark, inlined so it needs no asset or
+        // network fetch. Same colours as the web sign-in page.
+        icon: const SizedBox(
+          width: 18,
+          height: 18,
+          child: _MicrosoftLogo(),
+        ),
+        label: const Text(
+          'Continue with Microsoft',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -345,7 +378,7 @@ class _LoginPageState extends State<LoginPage> {
     return SizedBox(
       height: 52,
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: _busy ? null : _register,
         style: OutlinedButton.styleFrom(
           foregroundColor: kTextPrimary,
           side: const BorderSide(color: kBorder, width: 1.5),
@@ -415,11 +448,89 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_busy) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    // ponytail: no backend yet, so login is a stub that just hands off to the
-    // caller's onLoggedIn. Wire real auth here (or a routing package) later.
-    widget.onLoggedIn?.call();
+
+    setState(() => _busy = true);
+
+    try {
+      await _auth.login(_email.text.trim(), _password.text);
+      if (!mounted) return;
+      widget.onLoggedIn?.call();
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      _showError(error.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _register() async {
+    if (_busy) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final name = _name.text.trim();
+    if (name.isEmpty) {
+      _showError('Enter your name');
+      return;
+    }
+
+    setState(() => _busy = true);
+
+    try {
+      await _auth.register(name, _email.text.trim(), _password.text);
+      if (!mounted) return;
+      widget.onLoggedIn?.call();
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      _showError(error.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Opens Microsoft's sign-in page in the system browser, then polls the
+  /// backend until the callback has handed back a token. The consent screen is
+  /// always a real browser page, so the user can see which account they pick.
+  Future<void> _microsoftSignIn() async {
+    if (_busy) return;
+
+    setState(() => _busy = true);
+
+    try {
+      final start = await _auth.microsoftStart();
+
+      final open = widget.openUrl ?? _openInBrowser;
+      if (!await open(start.url)) {
+        throw AuthException('Could not open the Microsoft sign-in page.');
+      }
+
+      final result = await _auth.microsoftFinish(start.state);
+      if (!mounted) return;
+      _email.text = result.user.email;
+      widget.onLoggedIn?.call();
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      _showError(error.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// External application mode keeps the consent page out of the app, so the
+  /// rescuee can authenticate with Microsoft without us handling credentials.
+  Future<bool> _openInBrowser(String url) =>
+      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: kTextPrimary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   InputDecoration _inputDecoration({
@@ -446,6 +557,39 @@ class _LoginPageState extends State<LoginPage> {
       focusedBorder: outlineBorder(14, color: kPrimary, width: 2),
       errorBorder: outlineBorder(14, color: kPrimary, width: 1.5),
       focusedErrorBorder: outlineBorder(14, color: kPrimary, width: 2),
+    );
+  }
+}
+/// The four-colour Microsoft mark, drawn inline so it needs no asset file.
+class _MicrosoftLogo extends StatelessWidget {
+  const _MicrosoftLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget square(Color color) => Container(width: 8, height: 8, color: color);
+
+    // Two rows of two squares, filling the caller's 18x18 box.
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            square(const Color(0xFFF25022)),
+            const SizedBox(width: 2),
+            square(const Color(0xFF7FBA00)),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            square(const Color(0xFF00A4EF)),
+            const SizedBox(width: 2),
+            square(const Color(0xFFBFB900)),
+          ],
+        ),
+      ],
     );
   }
 }

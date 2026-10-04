@@ -1,10 +1,22 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'constants.dart';
+import 'alert_status_page.dart';
+import 'services/alert_api.dart';
+import 'services/auth_service.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, this.onSignOut});
+  const HomePage({super.key, this.onSignOut, this.api, this.auth});
 
   final VoidCallback? onSignOut;
+
+  /// Injected by tests; defaults to the real backend client.
+  final AlertApi? api;
+
+  /// Supplies the bearer token the status page needs to read alert updates.
+  /// Sending an alert is unauthenticated, but reading its status is not.
+  final AuthService? auth;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -14,10 +26,19 @@ class _HomePageState extends State<HomePage> {
   final _room = TextEditingController(text: 'Room 214');
   String? _selectedType;
   String _facility = facilities.first.id;
+  bool _sending = false;
+
+  // Built on first use and kept, because AlertApi owns an HttpClient that has
+  // to be closed in dispose. Reading it in dispose must not create one.
+  AlertApi? _ownedApi;
+
+  AlertApi get _api =>
+      widget.api ?? (_ownedApi ??= AlertApi(token: widget.auth?.token));
 
   @override
   void dispose() {
     _room.dispose();
+    _ownedApi?.close();
     super.dispose();
   }
 
@@ -85,6 +106,50 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _sendAlert() async {
+    if (_sending) return;
+
+    setState(() => _sending = true);
+
+    final facility = facilities.firstWhere(
+      (item) => item.id == _facility,
+      orElse: () => facilities.first,
+    );
+
+    try {
+      final alert = await _api.sendAlert(
+        facility: facility.label,
+        type: _selectedType!,
+        location: _room.text.trim().isEmpty
+            ? facility.label
+            : _room.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => AlertStatusPage(alert: alert, api: _api)),
+      );
+
+      // Back from the status screen: reset so a new alert can be sent.
+      if (mounted) setState(() => _sending = false);
+    } on AlertApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _sending = false);
+      _showError(error.message);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: kTextPrimary,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -338,8 +403,7 @@ class _HomePageState extends State<HomePage> {
     return SizedBox(
       height: 58,
       child: FilledButton.icon(
-        // ponytail: no backend yet, so send is a no-op. Wire the API call here.
-        onPressed: _selectedType == null ? null : () {},
+        onPressed: _selectedType == null || _sending ? null : _sendAlert,
         style: FilledButton.styleFrom(
           backgroundColor: kPrimary,
           disabledBackgroundColor: kBorder,
@@ -349,13 +413,19 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        icon: const Icon(
-          Icons.warning_amber_rounded,
-          size: 25,
-        ),
-        label: const Text(
-          'SEND ALERT',
-          style: TextStyle(
+        icon: _sending
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+              )
+            : const Icon(
+                Icons.warning_amber_rounded,
+                size: 25,
+              ),
+        label: Text(
+          _sending ? 'SENDING...' : 'SEND ALERT',
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w900,
             letterSpacing: 0.5,

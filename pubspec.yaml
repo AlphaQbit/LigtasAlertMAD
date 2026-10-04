@@ -10,6 +10,13 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Works on web, mobile and desktop from one code path, so the app does
+  # not need platform-specific HTTP.
+  http: ^1.6.0
+  url_launcher: ^6.3.3
+  # Survives an app restart so a rescuee mid-emergency stays signed in.
+  shared_preferences: ^2.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

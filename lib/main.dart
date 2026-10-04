@@ -1,12 +1,63 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'constants.dart';
 import 'home_page.dart';
 import 'login_page.dart';
+import 'services/auth_service.dart';
 
 void main() => runApp(const LigtasApp());
 
-class LigtasApp extends StatelessWidget {
-  const LigtasApp({super.key});
+class LigtasApp extends StatefulWidget {
+  const LigtasApp({super.key, this.auth});
+
+  /// Injected by tests. The real one reads shared_preferences, which is a
+  /// platform channel and does not exist under flutter_test.
+  final AuthService? auth;
+
+  @override
+  State<LigtasApp> createState() => _LigtasAppState();
+}
+
+class _LigtasAppState extends State<LigtasApp> {
+  late final AuthService _auth = widget.auth ?? AuthService();
+
+  /// True while we check for a previous session on startup.
+  bool _checking = true;
+
+  /// True once we know whether a usable session exists. Drives which page is
+  /// built, so sign-out and restore are the same switch.
+  bool _signedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restore();
+  }
+
+  /// Open straight into the app if the stored token is still good, so a
+  /// rescuee mid-emergency is never bounced to the login screen by a restart.
+  Future<void> _restore() async {
+    final user = await _auth.restoreSession();
+
+    if (!mounted) return;
+    setState(() {
+      _signedIn = user != null;
+      _checking = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    // Only close what we created. A test-injected fake may not be closeable.
+    if (widget.auth == null) _auth.close();
+    super.dispose();
+  }
+
+  Future<void> _signOut() async {
+    await _auth.logout();
+
+    if (!mounted) return;
+    setState(() => _signedIn = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,26 +68,18 @@ class LigtasApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: kPrimary),
       ),
-      // ponytail: Builder so onLoggedIn's context sits *below* the Navigator
-      // that MaterialApp installs. LigtasApp's own context is above it, and
-      // Navigator.of() there throws - which makes the login button look dead.
-      home: Builder(
-        builder: (context) => LoginPage(
-          onLoggedIn: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => HomePage(
-                  onSignOut: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const LoginPage()),
-                    );
-                  },
+      // ponytail: one boolean swaps the pages instead of pushing routes.
+      // Pushing HomePage on top of login left it stuck there after sign-out,
+      // because rebuilding `home:` cannot dismiss a route already on the
+      // Navigator stack. A switch has no such asymmetry.
+      home: _checking
+          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+          : _signedIn
+              ? HomePage(auth: _auth, onSignOut: _signOut)
+              : LoginPage(
+                  auth: _auth,
+                  onLoggedIn: () => setState(() => _signedIn = true),
                 ),
-              ),
-            );
-          },
-        ),
-      ),
     );
   }
 }
