@@ -58,3 +58,15 @@ const Map<String, String> kStatusMessages = {
   kStatusAcknowledged: 'Your alert was received. Responders are responding.',
   kStatusResolved: 'This emergency has been resolved. Stay safe.',
 };
+
+/// Shows a floating error snack bar using the app's dark text color.
+/// Shared by login and home pages so the error look stays in one place.
+void showErrorBar(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: kTextPrimary,
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+}

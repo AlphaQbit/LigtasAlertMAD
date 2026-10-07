@@ -56,8 +56,9 @@ class _AlertStatusPageState extends State<AlertStatusPage> {
         _showConnectionWarning = false;
       });
 
-      if (changed && updated.status == kStatusResolved) {
+if (changed && updated.status == kStatusResolved) {
         _timer?.cancel();
+        _timer = null;
       }
     } on AlertApiException {
       if (!mounted) return;

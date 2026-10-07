@@ -144,15 +144,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: kTextPrimary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+void _showError(String message) => showErrorBar(context, message);
 
   void _openMenu() {
     showModalBottomSheet<void>(

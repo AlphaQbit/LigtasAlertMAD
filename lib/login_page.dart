@@ -127,9 +127,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
 
-        const SizedBox(height: 6),
-
-        const Text(
+                const Text(
           'Sign in to keep your safety profile and room on file.',
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -341,10 +339,10 @@ class _LoginPageState extends State<LoginPage> {
         ),
         // The four-square Microsoft mark, inlined so it needs no asset or
         // network fetch. Same colours as the web sign-in page.
-        icon: const SizedBox(
+        icon: SizedBox(
           width: 18,
           height: 18,
-          child: _MicrosoftLogo(),
+          child: _microsoftLogo(),
         ),
         label: const Text(
           'Continue with Microsoft',
@@ -523,15 +521,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<bool> _openInBrowser(String url) =>
       launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: kTextPrimary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+  void _showError(String message) => showErrorBar(context, message);
 
   InputDecoration _inputDecoration({
     required IconData icon,
@@ -559,16 +549,11 @@ class _LoginPageState extends State<LoginPage> {
       focusedErrorBorder: outlineBorder(14, color: kPrimary, width: 2),
     );
   }
-}
-/// The four-colour Microsoft mark, drawn inline so it needs no asset file.
-class _MicrosoftLogo extends StatelessWidget {
-  const _MicrosoftLogo();
 
-  @override
-  Widget build(BuildContext context) {
+  /// The four-colour Microsoft mark, drawn inline so it needs no asset file.
+  Widget _microsoftLogo() {
     Widget square(Color color) => Container(width: 8, height: 8, color: color);
 
-    // Two rows of two squares, filling the caller's 18x18 box.
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -593,3 +578,4 @@ class _MicrosoftLogo extends StatelessWidget {
     );
   }
 }
+
