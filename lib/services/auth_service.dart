@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../constants.dart';
@@ -61,7 +62,7 @@ class AuthService {
     int maxPolls = 150,
   })  : baseUrl = baseUrl ?? kApiBase,
         _client = client ?? http.Client(),
-        _store = store ?? SharedPrefsTokenStore(),
+        _store = store ?? SecurePrefsTokenStore(const FlutterSecureStorage()),
         _pollInterval = pollInterval,
         _maxPolls = maxPolls;
 

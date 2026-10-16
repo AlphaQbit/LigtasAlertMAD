@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'constants.dart';
-import 'home_page.dart';
+import 'app_shell.dart';
 import 'login_page.dart';
 import 'services/auth_service.dart';
 
@@ -27,6 +27,10 @@ class _LigtasAppState extends State<LigtasApp> {
   /// built, so sign-out and restore are the same switch.
   bool _signedIn = false;
 
+  /// The rescuee restoreSession() already fetched. The account tab shows it
+  /// instead of inventing a profile screen that would need a second call.
+  AuthUser? _user;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +45,7 @@ class _LigtasAppState extends State<LigtasApp> {
     if (!mounted) return;
     setState(() {
       _signedIn = user != null;
+      _user = user;
       _checking = false;
     });
   }
@@ -75,7 +80,11 @@ class _LigtasAppState extends State<LigtasApp> {
       home: _checking
           ? const Scaffold(body: Center(child: CircularProgressIndicator()))
           : _signedIn
-              ? HomePage(auth: _auth, onSignOut: _signOut)
+              ? BottomShell(
+                  auth: _auth,
+                  user: _user,
+                  onSignOut: _signOut,
+                )
               : LoginPage(
                   auth: _auth,
                   onLoggedIn: () => setState(() => _signedIn = true),

@@ -33,7 +33,7 @@ class _AlertStatusPageState extends State<AlertStatusPage> {
   void initState() {
     super.initState();
     _alert = widget.alert;
-    _api = widget.api ?? AlertApi();
+    _api = widget.api ?? AlertApi(); // token provided by HomePage via widget.api
     _timer = Timer.periodic(_pollInterval, (_) => _poll());
   }
 
@@ -56,7 +56,7 @@ class _AlertStatusPageState extends State<AlertStatusPage> {
         _showConnectionWarning = false;
       });
 
-if (changed && updated.status == kStatusResolved) {
+      if (changed && updated.status == kStatusResolved) {
         _timer?.cancel();
         _timer = null;
       }

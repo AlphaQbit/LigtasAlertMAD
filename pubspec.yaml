@@ -16,6 +16,9 @@ dependencies:
   url_launcher: ^6.3.3
   # Survives an app restart so a rescuee mid-emergency stays signed in.
   shared_preferences: ^2.3.0
+  # Bearer token in the platform keychain, not plaintext on disk. A campus
+  # phone is often shared, and the token is what grants alert access.
+  flutter_secure_storage: ^9.0.0
 
 dev_dependencies:
   flutter_test:

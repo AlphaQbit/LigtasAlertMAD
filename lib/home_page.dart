@@ -51,14 +51,6 @@ class _HomePageState extends State<HomePage> {
         foregroundColor: Colors.white,
         elevation: 0,
         titleSpacing: 4,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.menu_rounded,
-            size: 30,
-          ),
-          tooltip: 'Menu',
-          onPressed: _openMenu,
-        ),
         title: const Text(
           'LigtasAlert',
           style: TextStyle(
@@ -124,9 +116,7 @@ class _HomePageState extends State<HomePage> {
       final alert = await _api.sendAlert(
         facility: facility.label,
         type: _selectedType!,
-        location: _room.text.trim().isEmpty
-            ? facility.label
-            : _room.text.trim(),
+        location: _locationValue(facility.label),
       );
 
       if (!mounted) return;
@@ -137,37 +127,56 @@ class _HomePageState extends State<HomePage> {
 
       // Back from the status screen: reset so a new alert can be sent.
       if (mounted) setState(() => _sending = false);
+    } on AlertSubmissionUncertainException catch (error) {
+      if (!mounted) return;
+      setState(() => _sending = false);
+      // An unknown outcome must not resolve into an immediate retry: the
+      // alert may already be on its way, and a second tap could create a
+      // duplicate. The dialog explains that and only offers a deliberate
+      // choice, with "Send another" explicitly accepting the duplicate risk.
+      _showUnknownOutcomeDialog(error.message);
     } on AlertApiException catch (error) {
       if (!mounted) return;
       setState(() => _sending = false);
-      _showError(error.message);
+      showErrorBar(context, error.message);
     }
   }
 
-void _showError(String message) => showErrorBar(context, message);
-
-  void _openMenu() {
-    showModalBottomSheet<void>(
+  void _showUnknownOutcomeDialog(String message) {
+    showDialog<void>(
       context: context,
-      builder: (sheet) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.logout_rounded, color: kPrimary),
-              title: const Text(
-                'Sign out',
-                style: TextStyle(color: kPrimary, fontWeight: FontWeight.w700),
-              ),
-              onTap: () {
-                Navigator.pop(sheet);
-                widget.onSignOut?.call();
-              },
-            ),
-          ],
+      builder: (dialog) => AlertDialog(
+        title: const Text('Alert status unknown'),
+        content: Text(
+          '$message If you already see it on the rescue service dashboard, '
+          'do not send it again.',
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialog),
+            child: const Text('OK, I understand'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialog),
+            child: const Text('Send another alert'),
+          ),
+        ],
       ),
     );
+  }
+
+  /// The location string submitted to the backend.
+  ///
+  /// ponytail: an empty room used to collapse into the facility label, which
+  /// reads as if the rescuee knew exactly where they were. An unknown location
+  /// is now marked explicitly so rescuers can triage honestly, while still
+  /// fitting the API's required string field (max 255 chars).
+  String _locationValue(String facilityLabel) {
+    final room = _room.text.trim();
+    if (room.isEmpty) {
+      return '$facilityLabel (exact room not provided)';
+    }
+    return room;
   }
 
   Widget _buildLocationPanel() {
@@ -207,78 +216,59 @@ void _showError(String message) => showErrorBar(context, message);
 
           const SizedBox(height: 12),
 
-          Row(
+          Column(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: kPrimary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.location_on_rounded,
-                  color: kPrimary,
-                  size: 27,
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: kPrimary.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.location_on_rounded,
+                      color: kPrimary,
+                      size: 27,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          facility.label,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: kTextPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _room.text.isEmpty
+                              ? 'Exact room not provided'
+                              : _room.text,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: kTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
 
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      facility.label,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: kTextPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _room.text.isEmpty
-                          ? 'No room specified'
-                          : _room.text,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: kTextSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: kOkBg,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.circle,
-                      size: 7,
-                      color: kOkDot,
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'Ready',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: kOkText,
-                      ),
-                    ),
-                  ],
-                ),
+              // The status pill sits on its own line so it can never
+              // overflow the summary row on a small screen.
+              Align(
+                alignment: Alignment.centerRight,
+                child: _buildLocationStatus(),
               ),
             ],
           ),
@@ -295,6 +285,45 @@ void _showError(String message) => showErrorBar(context, message);
                 child: _buildRoomField(),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The location pill changes colour so a rescuee can tell "I know where I
+  /// am" from "I only know the building" without reading the text twice.
+  Widget _buildLocationStatus() {
+    final known = _room.text.trim().isNotEmpty;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: known ? kOkBg : const Color(0xFFFEF3C7),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: known ? kOkDot : const Color(0xFFF59E0B),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            known ? Icons.check_circle_rounded : Icons.help_outline_rounded,
+            size: 11,
+            color: known ? kOkDot : const Color(0xFFB45309),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            known ? 'Location set' : 'Exact room unknown',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: known ? kOkText : const Color(0xFF92400E),
+            ),
           ),
         ],
       ),

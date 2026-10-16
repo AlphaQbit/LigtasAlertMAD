@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Where the bearer token lives between app launches.
 ///
@@ -36,6 +37,31 @@ class SharedPrefsTokenStore implements TokenStore {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key);
   }
+}
+
+/// The production store. The bearer token is the only thing standing between a
+/// rescuee and their alerts, so it goes in the platform keychain (iOS
+/// Keychain, Android Keystore, Windows Credential Vault) rather than the
+/// plaintext shared preferences a campus phone may share.
+///
+/// ponytail: drop SharedPrefsTokenStore entirely once every platform is on
+/// secure storage. It stays here as the fallback for the web, which has no
+/// keychain and where the browser already isolates per-origin storage.
+class SecurePrefsTokenStore implements TokenStore {
+  SecurePrefsTokenStore(this._store);
+
+  final FlutterSecureStorage _store;
+
+  static const _key = 'ligtasalert.auth_token';
+
+  @override
+  Future<String?> read() => _store.read(key: _key);
+
+  @override
+  Future<void> write(String token) => _store.write(key: _key, value: token);
+
+  @override
+  Future<void> clear() => _store.delete(key: _key);
 }
 
 /// Test double. Starts empty unless seeded.

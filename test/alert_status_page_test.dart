@@ -13,6 +13,7 @@ class FakeAlertApi extends AlertApi {
   @override
   Future<Alert> fetchAlert(int id) async => Alert.fromJson({
         'id': id,
+        'user_id': 1,
         'facility': 'MCC MAIN',
         'type': 'Medical',
         'location': 'Room 204',
@@ -33,6 +34,7 @@ class FakeAlertApi extends AlertApi {
 
 Alert buildAlert({String status = kStatusActive}) => Alert.fromJson({
       'id': 1,
+      'user_id': 1,
       'facility': 'MCC MAIN',
       'type': 'Medical',
       'location': 'Room 204',

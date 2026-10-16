@@ -248,7 +248,7 @@ class _LoginPageState extends State<LoginPage> {
       onFieldSubmitted: (_) => _submit(),
       validator: (value) {
         if (value == null || value.isEmpty) return 'Enter your password';
-        if (value.length < 6) return 'Password must be 6+ characters';
+        if (value.length < 8) return 'Password must be 8+ characters';
         return null;
       },
       decoration: _inputDecoration(
@@ -571,7 +571,7 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             square(const Color(0xFF00A4EF)),
             const SizedBox(width: 2),
-            square(const Color(0xFFBFB900)),
+            square(const Color(0xFFFFB900)),
           ],
         ),
       ],
