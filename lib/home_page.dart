@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'constants.dart';
 import 'alert_status_page.dart';
 import 'services/alert_api.dart';
@@ -227,8 +228,8 @@ class _HomePageState extends State<HomePage> {
                       color: kPrimary.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(
-                      Icons.location_on_rounded,
+                    child: Icon(
+                      LucideIcons.map_pin,
                       color: kPrimary,
                       size: 27,
                     ),

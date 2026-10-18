@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 import 'constants.dart';
 import 'services/alert_api.dart';
@@ -129,7 +130,7 @@ class _AlertStatusPageState extends State<AlertStatusPage> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              resolved ? Icons.check_circle_rounded : Icons.notifications_active_rounded,
+              resolved ? LucideIcons.circle_check : LucideIcons.bell_ring,
               size: 38,
               color: resolved ? kOkDot : kPrimary,
             ),
@@ -195,7 +196,7 @@ class _AlertStatusPageState extends State<AlertStatusPage> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.wifi_off_rounded, color: Color(0xFFB45309), size: 20),
+          const Icon(LucideIcons.wifi_off, color: Color(0xFFB45309), size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

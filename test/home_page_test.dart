@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:ligtasalert/alert_status_page.dart';
 import 'package:ligtasalert/app_shell.dart';
 import 'package:ligtasalert/home_page.dart';
@@ -160,7 +161,7 @@ void main() {
 
   testWidgets('no hamburger menu button exists', (tester) async {
     await pumpAt(tester, const Size(360, 640));
-    expect(find.byIcon(Icons.menu_rounded), findsNothing);
+    expect(find.byIcon(LucideIcons.menu), findsNothing);
   });
 
   testWidgets('bottom bar renders on the authenticated home screen',
@@ -205,7 +206,7 @@ void main() {
     // tabs - "Account" also appears as the bottom bar's unselected label.
     expect(find.text('LigtasAlert'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.person_rounded));
+    await tester.tap(find.byIcon(LucideIcons.user));
     await tester.pumpAndSettle();
 
     expect(find.text('Account'), findsWidgets);
@@ -239,7 +240,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Medical'));
     await tester.pump();
-    await tester.tap(find.byIcon(Icons.person_rounded));
+    await tester.tap(find.byIcon(LucideIcons.user));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Alert'));
     await tester.pumpAndSettle();
@@ -386,9 +387,9 @@ void main() {
 
     expect(find.byType(BottomShellBar), findsOneWidget);
 
-    await tester.ensureVisible(find.byIcon(Icons.person_rounded));
+    await tester.ensureVisible(find.byIcon(LucideIcons.user));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.person_rounded));
+    await tester.tap(find.byIcon(LucideIcons.user));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
@@ -397,7 +398,7 @@ void main() {
     // shell is gone entirely, not just hidden behind a tab.
     expect(find.text('Log In'), findsOneWidget);
     expect(find.byType(BottomShellBar), findsNothing);
-    expect(find.byIcon(Icons.person_rounded), findsNothing);
+    expect(find.byIcon(LucideIcons.user), findsNothing);
   });
 
   // The send button used to be a no-op. This proves it now posts the chosen

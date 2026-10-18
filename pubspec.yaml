@@ -20,6 +20,10 @@ dependencies:
   # phone is often shared, and the token is what grants alert access.
   flutter_secure_storage: ^9.0.0
 
+  # Lucide icons (lucide.dev) for Flutter. Single dependency, no custom icon
+  # framework; use Icon(LucideIcons.name) exactly as the package documents.
+  flutter_lucide: ^1.59.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

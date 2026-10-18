@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'constants.dart';
 import 'account_page.dart';
 import 'home_page.dart';
@@ -104,11 +105,11 @@ class BottomShellBar extends StatelessWidget {
       showUnselectedLabels: true,
       items: [
         BottomNavigationBarItem(
-          icon: const Icon(Icons.warning_amber_rounded, size: 26),
+          icon: const Icon(LucideIcons.siren, size: 26),
           label: 'Alert',
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.person_rounded, size: 26),
+          icon: const Icon(LucideIcons.user, size: 26),
           label: 'Account',
         ),
       ],

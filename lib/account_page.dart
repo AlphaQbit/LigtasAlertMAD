@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'constants.dart';
 import 'services/auth_service.dart';
 
@@ -55,7 +56,7 @@ class _AccountPageState extends State<AccountPage> {
                   side: const BorderSide(color: kPrimary, width: 2),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                icon: const Icon(Icons.logout_rounded, size: 20),
+                icon: const Icon(LucideIcons.log_out, size: 20),
                 label: const Text(
                   'Sign out',
                   style: TextStyle(
@@ -99,9 +100,7 @@ class _AccountPageState extends State<AccountPage> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              widget.user == null
-                  ? Icons.person_outline_rounded
-                  : Icons.person_rounded,
+              LucideIcons.user,
               size: 36,
               color: kPrimary,
             ),
@@ -141,13 +140,13 @@ class _AccountPageState extends State<AccountPage> {
           const SizedBox(height: 16),
 
           _buildProfileRow(
-            Icons.shield_outlined,
+            LucideIcons.shield_check,
             'Safety profile',
             'Kept on file with your facility',
           ),
           const SizedBox(height: 14),
           _buildProfileRow(
-            Icons.meeting_room_outlined,
+            LucideIcons.building,
             'Default room',
             'Set when you send an alert',
           ),
